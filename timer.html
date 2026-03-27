@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 40px 50px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      width: 340px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #a8b2d8;
+      margin-bottom: 30px;
+    }
+
+    .display {
+      font-size: 5rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #e94560;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 30px;
+      transition: color 0.3s;
+    }
+
+    .display.running { color: #4ecca3; }
+    .display.finished { color: #f5a623; animation: pulse 0.8s infinite alternate; }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to   { opacity: 0.4; }
+    }
+
+    .inputs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .input-group label {
+      font-size: 0.7rem;
+      color: #a8b2d8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .inputs input {
+      width: 70px;
+      text-align: center;
+      background: #0f3460;
+      border: 1px solid #1a4a7a;
+      border-radius: 8px;
+      color: #eee;
+      font-size: 1.4rem;
+      padding: 8px 4px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .inputs input:focus { border-color: #4ecca3; }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    #btnStart  { background: #4ecca3; color: #1a1a2e; }
+    #btnPause  { background: #f5a623; color: #1a1a2e; display: none; }
+    #btnReset  { background: #e94560; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Timer</h1>
+
+    <div class="display" id="display">00:00:00</div>
+
+    <div class="inputs">
+      <div class="input-group">
+        <label>Ore</label>
+        <input type="number" id="inputH" min="0" max="99" value="0" />
+      </div>
+      <div class="input-group">
+        <label>Minuti</label>
+        <input type="number" id="inputM" min="0" max="59" value="5" />
+      </div>
+      <div class="input-group">
+        <label>Secondi</label>
+        <input type="number" id="inputS" min="0" max="59" value="0" />
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button id="btnStart" onclick="start()">Avvia</button>
+      <button id="btnPause" onclick="pause()">Pausa</button>
+      <button id="btnReset" onclick="reset()">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    let remaining = 0;
+    let interval = null;
+    const display = document.getElementById('display');
+
+    function toSeconds() {
+      const h = parseInt(document.getElementById('inputH').value) || 0;
+      const m = parseInt(document.getElementById('inputM').value) || 0;
+      const s = parseInt(document.getElementById('inputS').value) || 0;
+      return h * 3600 + m * 60 + s;
+    }
+
+    function format(secs) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
+      return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    }
+
+    function start() {
+      if (interval) return;
+      if (remaining === 0) remaining = toSeconds();
+      if (remaining <= 0) return;
+
+      setInputsDisabled(true);
+      display.className = 'display running';
+      document.getElementById('btnStart').style.display = 'none';
+      document.getElementById('btnPause').style.display = 'inline-block';
+
+      interval = setInterval(() => {
+        remaining--;
+        display.textContent = format(remaining);
+        if (remaining <= 0) {
+          clearInterval(interval);
+          interval = null;
+          display.className = 'display finished';
+          display.textContent = '00:00:00';
+          document.getElementById('btnPause').style.display = 'none';
+          document.getElementById('btnStart').style.display = 'inline-block';
+          setInputsDisabled(false);
+          try { new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAA').play(); } catch(e){}
+          alert('Tempo scaduto!');
+        }
+      }, 1000);
+    }
+
+    function pause() {
+      clearInterval(interval);
+      interval = null;
+      display.className = 'display';
+      document.getElementById('btnPause').style.display = 'none';
+      document.getElementById('btnStart').style.display = 'inline-block';
+      document.getElementById('btnStart').textContent = 'Riprendi';
+    }
+
+    function reset() {
+      clearInterval(interval);
+      interval = null;
+      remaining = 0;
+      display.textContent = '00:00:00';
+      display.className = 'display';
+      document.getElementById('btnPause').style.display = 'none';
+      document.getElementById('btnStart').style.display = 'inline-block';
+      document.getElementById('btnStart').textContent = 'Avvia';
+      setInputsDisabled(false);
+    }
+
+    function setInputsDisabled(disabled) {
+      ['inputH','inputM','inputS'].forEach(id =>
+        document.getElementById(id).disabled = disabled
+      );
+    }
+
+    // Mostra subito il valore impostato
+    display.textContent = format(toSeconds());
+    ['inputH','inputM','inputS'].forEach(id =>
+      document.getElementById(id).addEventListener('input', () => {
+        if (!interval && remaining === 0) display.textContent = format(toSeconds());
+      })
+    );
+  </script>
+</body>
+</html>
